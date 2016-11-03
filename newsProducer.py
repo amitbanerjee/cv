@@ -14,7 +14,7 @@ def produceNews():
 	while True:
 
 		try:
-			fp = open(FILE_PATH, "w+", 0)
+			fp = open(FILE_PATH, "r+", 0)
 			fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 		except IOError, err:
@@ -25,22 +25,23 @@ def produceNews():
 
 		else:
 			try:
-				news = fp.read()
-				print "News reading: " + news
+				news = fp.read().strip()
+				#print "News reading: " + news
 				if not news:
 					lastNews = "News" + str(random.randint(0, 10000))
 					fp.write(lastNews)
-					print "News writing: " + lastNews
+					#print "News writing: " + lastNews
 					totalSleep = 0
 				else:
 					#Sanity Check
 					if news != lastNews:
-						print "Somebody else if producing news in the same channel."
+						#print "Somebody else if producing news in the same channel."
 						#TBD: proper message
-						raise "Channel Exception"
+						#raise "Channel Exception"
+						pass
 
 					if totalSleep >= MAX_IDLE_TIMEOUT and totalSleep%10 == 0:
-						print "Portal is not consuming news for last " + totalSleep + " seconds."
+						print "Portal is not consuming news for last " + str(totalSleep) + " seconds."
 
 			except:
 				#Proper error message
@@ -68,6 +69,13 @@ if __name__=="__main__":
 			#TBD: Proper error message	
 			print "Problem in directory creation"
 			sys.exit(1)
+
+	if os.path.exists(FILE_PATH):
+		try:
+			os.system("rm -f " + FILE_PATH)
+			os.system("touch " + FILE_PATH)
+		except:
+			print "Can't remove file"
 	'''	
 	try:	
 		produceNews()
