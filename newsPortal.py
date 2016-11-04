@@ -95,6 +95,7 @@ class Portal(Thread):
 	
 			else:
 				try:
+					print "Portal acquired exclusive access of the shared file"
 					news = fp.read().strip()
 					#print "News reading: " + news
 					if news:
@@ -113,6 +114,7 @@ class Portal(Thread):
 	
 			finally:
 				fp.flush()
+				print "Portal released exclusive access of the shared file"
 				fcntl.lockf(fp, fcntl.LOCK_UN)
 				fp.close()	
 	
@@ -139,16 +141,15 @@ class Portal(Thread):
 						readersFeed[i].append(news)
 					self.condition.notify_all()
 					print "Portal appended the news to the readersFeed and notified readers"
-					break
 				else:
 					stillUnread = False
 					for i in range(NUM_READERS):
-						if not readersFeed[i]:
+						if readersFeed[i]:
 							print "Thread " + str(i) + ", morning time, wake up and read news!(fight for your slot, BTW)"
 							stillUnread = True
-					if stillUnread:
-						totalWait -= 2
-						time.sleep(2)
+
+					if not stillUnread:
+						break
 			
 				if totalWait <= 0 and stillUnread:
 					print "Threads are not reading. Can't wait anymore. Time for new news."
@@ -161,6 +162,9 @@ class Portal(Thread):
 	
 			finally:
 				self.condition.release()
+
+			totalWait -= 2
+			time.sleep(2)
 
 				
 def main():	

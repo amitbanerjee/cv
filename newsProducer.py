@@ -4,6 +4,7 @@ import os.path
 import sys
 import time
 import random
+import errno
 
 FILE_PATH = "./.lock/.news"
 MAX_IDLE_TIMEOUT = 10
