@@ -44,7 +44,7 @@ def produceNews():
 						print "ERROR: Some other news producer is generating news in the same channel"
 
 					if totalSleep >= MAX_IDLE_TIMEOUT and totalSleep%10 == 0:
-						print "Portal is not consuming news for last " + str(totalSleep) + " seconds."
+						print "ERROR: Portal is not consuming news for last " + str(totalSleep) + " seconds."
 
 			except:
 				print "ERROR: In News producer thread. Messages follows - "
@@ -87,4 +87,7 @@ if __name__=="__main__":
 			print sys.exc_info()[0], sys.exc_info()[1]
 			sys.exit(1)
 			
-	produceNews()
+	try:
+		produceNews()
+	except KeyboardInterrupt:
+		print "Ctrl-c received! Bye!"

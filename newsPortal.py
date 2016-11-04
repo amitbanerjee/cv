@@ -5,6 +5,7 @@ import sys
 import time
 from threading import Thread, Condition
 import errno
+import random
 
 #This is the shared file between producer and Portal.
 FILE_PATH = "./.lock/.news"
@@ -48,17 +49,15 @@ class Reader(Thread):
 		super(Reader, self).__init__()
 		self.condition = condition
 		self.trNum = num
-		self.kill_received = False
 
 	def __del__(self):
 		del self.condition 
 		del self.trNum
-		del self.kill_received
 
 	def run(self):
 		global readersFeed
 
-		while not self.kill_received:
+		while True:
 			try:
 				self.condition.acquire()
 
@@ -89,18 +88,16 @@ class Portal(Thread):
         def __init__ (self, condition):
 		super(Portal, self).__init__()
 		self.condition = condition
-		self.kill_received = False
 
 	def __del__(self):
 		del self.condition 
-		del self.kill_received
 
 	def run(self):
 		global readersFeed
 		totalSleep = 0
 		lastNews = ""
 
-		while not self.kill_received:
+		while True:
 			try:
 				#Open the shared file and grab exclusive lock
 				fp = open(FILE_PATH, "r+", 0)
@@ -240,24 +237,26 @@ def main():
 
 	#start portal thread 
 	portalTr = Portal(condition)
+	portalTr.daemon = True
 	portalTr.start()
 	threads.append(portalTr)
 
 	#Start reader threads
 	for i in range(NUM_READERS):
 		readerTr = Reader(condition, i)
+
+		#Introduce some randomness here with some floating nums
+		time.sleep(random.randint(0,100)/30.0)
+		readerTr.daemon = True
+
 		readerTr.start()
 		threads.append(readerTr)
 
-	while len(threads) > 0:
-        	try:
-            		# Join all threads using a timeout so it doesn't block
-            		# Filter out threads which have been joined or are None
-            		threads = [t.join(1) for t in threads if t is not None and t.isAlive()]
-        	except KeyboardInterrupt:
-            		print "Ctrl-c received! Sending kill to threads..."
-            		for t in threads:
-                		t.kill_received = True
+        try:
+		while True:
+			time.sleep(2)
+	except KeyboardInterrupt:
+		print "Ctrl-c received! Bye!"
 
 if __name__=="__main__":
 	main()
