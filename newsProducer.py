@@ -45,8 +45,8 @@ def produceNews():
 						print "Portal is not consuming news for last " + str(totalSleep) + " seconds."
 
 			except:
-				#Proper error message
-				raise
+				print "ERROR: In Portal thread. Messages follows - "
+				print sys.exc_info()[0], sys.exc_info()[1]
 
 		finally:
 			fp.flush()
@@ -77,12 +77,7 @@ if __name__=="__main__":
 			os.system("touch " + FILE_PATH)
 		except:
 			print "Can't remove file"
-	'''	
-	try:	
-		produceNews()
-	except:
-		#TBD:
-		print "Error in producing news"
+			
 
-	'''
+
 	produceNews()
