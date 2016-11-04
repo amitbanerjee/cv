@@ -126,7 +126,7 @@ class Portal(Thread):
 					else:
 						#No news, if the threshold is crossed, complain. News produces may have died. 
 						if totalSleep >= PORTAL_MAX_IDLE_TIMEOUT and totalSleep%PORTAL_MAX_IDLE_TIMEOUT == 0:
-							print "Producer is not generating news for last " + str(totalSleep) + " seconds."
+							print "ERROR: Producer is not generating news for last " + str(totalSleep) + " seconds."
 	
 				except:
 					print "ERROR: In Portal thread. Messages follows - "	

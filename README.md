@@ -15,7 +15,7 @@
 ## It uses two pointer for each word and exchange the values. For each exchange left pointer forwards and right
 ## pointer goes backwords untill they touch or cross each other.
 
-## To run - "python reverseWords.py". It needs pythin 2.7
+## To run - "python reverseWords.py". It needs python 2.7
 
 
 # News producer and news Portal/News Readers quiz
@@ -27,7 +27,7 @@
 ## If the file is not empty it waits for threshold time and then generates error log.
 
 ## It writes the log in standard out. So to run use "nohup python newsProducer.py > producer.log &". To live monitor, use
-## python newsProducer.py. Use ctrl-c to terminate
+## python newsProducer.py. It needs python 2.7. Use ctrl-c to terminate.
 
 ## To test it independently use the shell code - testProducer.sh
 
@@ -49,6 +49,6 @@
 ## in readersFeed empty and goes back to wait call.
 
 ## It writes the log in standard out. So to run use "nohup python newsPortal.py > portal.log &". To live monitor, use
-## python newsPortal.py. Use ctrl-c to terminate.
+## python newsPortal.py. It needs python 2.7. Use ctrl-c to terminate
 
 ## To test it independently use the shell code - testPortal.sh

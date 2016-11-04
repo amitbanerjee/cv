@@ -76,16 +76,16 @@ if __name__=="__main__":
 			print sys.exc_info()[0], sys.exc_info()[1]
 			sys.exit(1)
 
-	if os.path.exists(FILE_PATH):
-		#Truncate the file
-		try:
-			fp = open(FILE_PATH, "w", 0)
-			fp.flush()
-			fp.close()	
-		except:
-			print "ERROR: opening and truncating file" 
-			print sys.exc_info()[0], sys.exc_info()[1]
-			sys.exit(1)
+	#Truncate the file if it exists
+	#Create it doesn't exist
+	try:
+		fp = open(FILE_PATH, "w", 0)
+		fp.flush()
+		fp.close()	
+	except:
+		print "ERROR: opening and truncating file" 
+		print sys.exc_info()[0], sys.exc_info()[1]
+		sys.exit(1)
 			
 	try:
 		produceNews()
