@@ -7,7 +7,13 @@ import random
 import errno
 
 FILE_PATH = "./.lock/.news"
+
+#This is a threshold timeout after which producer complains if the news is not consumed
 MAX_IDLE_TIMEOUT = 10
+
+#Portal thread wakeup interval
+PRODUCER_SLEEP = 2
+
 
 def produceNews():
 	totalSleep = 0
@@ -27,34 +33,32 @@ def produceNews():
 		else:
 			try:
 				news = fp.read().strip()
-				#print "News reading: " + news
 				if not news:
 					lastNews = "News" + str(random.randint(0, 10000))
 					fp.write(lastNews)
-					#print "News writing: " + lastNews
 					totalSleep = 0
 				else:
 					#Sanity Check
 					if news != lastNews:
-						#print "Somebody else if producing news in the same channel."
-						#TBD: proper message
-						#raise "Channel Exception"
-						pass
+						#Somebody else is producing news in the same channel
+						print "ERROR: Some other news producer is generating news in the same channel"
 
 					if totalSleep >= MAX_IDLE_TIMEOUT and totalSleep%10 == 0:
 						print "Portal is not consuming news for last " + str(totalSleep) + " seconds."
 
 			except:
-				print "ERROR: In Portal thread. Messages follows - "
+				print "ERROR: In News producer thread. Messages follows - "
 				print sys.exc_info()[0], sys.exc_info()[1]
+				break
 
 		finally:
 			fp.flush()
 			fcntl.lockf(fp, fcntl.LOCK_UN)
 			fp.close()	
 
-		time.sleep(2)
-		totalSleep += 2
+		#This is the time to allow the portal to grab the news and serve it to it's readers.
+		time.sleep(PRODUCER_SLEEP)
+		totalSleep += PRODUCER_SLEEP
 
 if __name__=="__main__":
 	
@@ -68,16 +72,19 @@ if __name__=="__main__":
 		except:
 			#Doesn't make sense to proceed
 			#TBD: Proper error message	
-			print "Problem in directory creation"
+			print "ERROR: Problem in directory creation"
+			print sys.exc_info()[0], sys.exc_info()[1]
 			sys.exit(1)
 
 	if os.path.exists(FILE_PATH):
+		#Truncate the file
 		try:
-			os.system("rm -f " + FILE_PATH)
-			os.system("touch " + FILE_PATH)
+			fp = open(FILE_PATH, "w", 0)
+			fp.flush()
+			fp.close()	
 		except:
-			print "Can't remove file"
+			print "ERROR: opening and truncating file" 
+			print sys.exc_info()[0], sys.exc_info()[1]
+			sys.exit(1)
 			
-
-
 	produceNews()
