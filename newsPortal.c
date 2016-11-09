@@ -3,9 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
 
 #define NUM_READERS 5
-#define MAX_NEWS_SIZE 50
+#define MAX_NEWS_SIZE 1024
+#define PRODUCER_IP 127.0.0.1
+#define PORT 8080
 
 typedef struct {
     pthread_mutex_t mutex; 	  // needed to add/remove data from the shared_news
@@ -25,8 +30,34 @@ void* portal(void *arg) {
     news_t *shared_news = (news_t*)arg;
     int i;
     bool allread;
+    int sock;
+    struct sockaddr_in server;
+    char message[MAX_NEWS_SIZE] , server_reply[MAX_NEWS_SIZE];
 
     printf("Production Thread Started.\n");
+    //Create socket
+    sock = socket(AF_INET , SOCK_STREAM , 0);
+    if (sock == -1)
+    {
+        printf("Could not create socket");
+        return;
+    }
+    printf("Socket created\n");
+     
+    //server.sin_addr.s_addr = inet_addr(PRODUCER_IP);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_family = AF_INET;
+    server.sin_port = htons( PORT );
+ 
+    //Connect to remote server
+    if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+    {
+        printf("connect failed. Error\n");
+        return;
+    }
+     
+    printf("Connected\n");
+
     while(1) {
 
         pthread_mutex_lock(&shared_news->mutex);
@@ -39,20 +70,30 @@ void* portal(void *arg) {
 	  }
         }
 
-	//TBD:
-	// 1. socket
-	// 2. no wait, timewait
-	// 3. periodic wakeup
         if(allread == false) { // Some readers have not read yet
             // wait until some elements are consumed
             pthread_cond_wait(&shared_news->cond_portal, &shared_news->mutex);
         }
 
-        // in real life it may be some data fetched from
-        // sensors, the web, or just some I/O
-        int t = rand();
-        printf("Produced: %d\n", t);
+	//Get data from news producer
+	memset(message, '\0', MAX_NEWS_SIZE);
+	sprintf(message, "send");
+	if( send(sock , message , strlen(message) , 0) < 0)
+        {
+            printf("Send failed\n");
+            break;
+        }
 
+	memset(server_reply, '\0', MAX_NEWS_SIZE);
+        if( recv(sock , server_reply , MAX_NEWS_SIZE , 0) < 0)
+        {
+            puts("recv failed");
+            break;
+        }
+         
+        printf("Portal received a new news - %s",server_reply);
+	strcpy(shared_news->news_buf, server_reply);
+         
         // append data to the shared_news
 	for (i=0; i<NUM_READERS; i++) { 
           shared_news->read[i] = false;
