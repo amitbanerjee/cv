@@ -17,7 +17,7 @@ typedef struct {
     pthread_cond_t cond_portal;   // Used to notify Portal when all news are read
     pthread_cond_t cond_readers;  // Used to notify readers when new news arrives
     char news_buf[MAX_NEWS_SIZE]; // Place for readers to consume news
-    bool read[NUM_READERS];       // TBD: number of readers not yet read news
+    bool read[NUM_READERS];       // Readers not yet read news
 } news_t;
 
 typedef struct {
@@ -99,8 +99,6 @@ void* portal(void *arg) {
           shared_news->read[i] = false;
 	}
 	sleep(rand() % 3);
-	// TBD: Copy the new in the buffer
-        //shared_news->to_read = NUM_READERS;
 
         // signal the fact that new items may be consumed
         pthread_cond_broadcast(&shared_news->cond_readers);
@@ -113,12 +111,12 @@ void* portal(void *arg) {
 
 // consume random numbers
 void* consumer(void *arg) {
-    // news_t *shared_news = (news_t*)arg;
     thread_info *this_thread = (thread_info*)arg;
     news_t *shared_news = this_thread->shared_news;
     int thread_num = this_thread->thread_num;
     int i;
     bool allread = true;
+    char news[MAX_NEWS_SIZE];
 
     printf("Consumer Thread Started.\n");
     while(1) {
@@ -129,9 +127,9 @@ void* consumer(void *arg) {
             pthread_cond_wait(&shared_news->cond_readers, &shared_news->mutex);
         }
 
-        // TBD: grab data
+	strcpy(news, shared_news->news_buf);
         shared_news->read[thread_num] = true;
-        printf("Consumed: %d\n", thread_num);
+        printf("Thread: %d Consumed news - %s\n", thread_num, news);
 	allread = true;
 	for (i=0; i<NUM_READERS; i++) { 
           if (shared_news->read[i] == false) {
@@ -139,7 +137,8 @@ void* consumer(void *arg) {
             break;
 	  }
         }
-        if (allread == true) { // Some readers have not read yet
+        if (allread == true) { // All readers read news
+          memset(shared_news->news_buf, '\0', MAX_NEWS_SIZE);
           pthread_cond_signal(&shared_news->cond_portal);
         }
 
