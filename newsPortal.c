@@ -24,17 +24,17 @@ typedef struct {
 void* portal(void *arg) {
     news_t *shared_news = (news_t*)arg;
     int i;
-    bool still_unread;
+    bool allread;
 
-    printf("Production Thread Started.");
+    printf("Production Thread Started.\n");
     while(1) {
 
         pthread_mutex_lock(&shared_news->mutex);
 
-	still_unread = false;
+	allread = true;
 	for (i=0; i<NUM_READERS; i++) { 
           if (shared_news->read[i] == false) {
-            still_unread = true;
+            allread = false;
             break;
 	  }
         }
@@ -43,7 +43,7 @@ void* portal(void *arg) {
 	// 1. socket
 	// 2. no wait, timewait
 	// 3. periodic wakeup
-        if(still_unread) { // Some readers have not read yet
+        if(allread == false) { // Some readers have not read yet
             // wait until some elements are consumed
             pthread_cond_wait(&shared_news->cond_portal, &shared_news->mutex);
         }
@@ -62,7 +62,7 @@ void* portal(void *arg) {
         //shared_news->to_read = NUM_READERS;
 
         // signal the fact that new items may be consumed
-        pthread_cond_signal(&shared_news->cond_readers);
+        pthread_cond_broadcast(&shared_news->cond_readers);
         pthread_mutex_unlock(&shared_news->mutex);
     }
 
@@ -76,8 +76,10 @@ void* consumer(void *arg) {
     thread_info *this_thread = (thread_info*)arg;
     news_t *shared_news = this_thread->shared_news;
     int thread_num = this_thread->thread_num;
+    int i;
+    bool allread = true;
 
-    printf("Production Thread Started.");
+    printf("Consumer Thread Started.\n");
     while(1) {
         pthread_mutex_lock(&shared_news->mutex);
 
@@ -87,11 +89,20 @@ void* consumer(void *arg) {
         }
 
         // TBD: grab data
-        shared_news->read[thread_num] == true;
+        shared_news->read[thread_num] = true;
         printf("Consumed: %d\n", thread_num);
+	allread = true;
+	for (i=0; i<NUM_READERS; i++) { 
+          if (shared_news->read[i] == false) {
+            allread = false;
+            break;
+	  }
+        }
+        if (allread == true) { // Some readers have not read yet
+          pthread_cond_signal(&shared_news->cond_portal);
+        }
 
         // signal the fact that new items may be produced
-        pthread_cond_signal(&shared_news->cond_portal);
         pthread_mutex_unlock(&shared_news->mutex);
     }
 
@@ -103,7 +114,7 @@ int main(int argc, char *argv[]) {
  
     int i;
     //news_t shared_news;
-    news_t shared_news =  {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, PTHREAD_COND_INITIALIZER, "Fake News", {}};
+    news_t shared_news =  {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, PTHREAD_COND_INITIALIZER};
     thread_info reader_threads[NUM_READERS];
     pthread_t threads[NUM_READERS+1];
 
@@ -113,7 +124,7 @@ int main(int argc, char *argv[]) {
     //shared_new->cond_portal = PTHREAD_COND_INITIALIZER;
     //shared_news->cond_readers = PTHREAD_COND_INITIALIZER;
     for (i=0; i<NUM_READERS; i++) {
-      shared_news.read[i] = false;
+      shared_news.read[i] = true;
     }
     printf("About to create threads1\n");	
     pthread_create(&threads[0], NULL, portal, (void*)&shared_news);
