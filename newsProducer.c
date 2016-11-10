@@ -5,14 +5,14 @@
 #include<unistd.h>
 
 #define PORT 8080
-#define BUFF_SIZE 1024
+#define MAX_NEWS_SIZE 1024
  
 int main(int argc , char *argv[])
 {
     int socket_desc , client_sock , c , read_size;
     struct sockaddr_in server , client;
-    char client_message[BUFF_SIZE];
-    char news[BUFF_SIZE];
+    char client_message[MAX_NEWS_SIZE];
+    char news[MAX_NEWS_SIZE];
      
     //Create socket
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -38,13 +38,13 @@ int main(int argc , char *argv[])
     printf("bind done\n");
      
     //Listen
-    listen(socket_desc , 3);
+    listen(socket_desc , 1);
      
     //Accept and incoming connection
     printf("Waiting for incoming connections...\n");
     c = sizeof(struct sockaddr_in);
      
-    memset(client_message, '\0', BUFF_SIZE);
+    memset(client_message, '\0', MAX_NEWS_SIZE);
     //accept connection from an incoming client
     client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
     if (client_sock < 0)
@@ -55,20 +55,20 @@ int main(int argc , char *argv[])
     printf("Connection accepted\n");
      
     //Receive a message from client
-    while( (read_size = recv(client_sock , client_message , BUFF_SIZE , 0)) > 0 )
+    while( (read_size = recv(client_sock , client_message , MAX_NEWS_SIZE , 0)) > 0 )
     {
 	if (strncmp(client_message, "send", 4) == 0){
 	  //Generate new news
-          memset(news, '\0', BUFF_SIZE);
+          memset(news, '\0', MAX_NEWS_SIZE);
           sprintf(news, "NEWS: %d\n", random()%10000);
           printf("Generated a new news - %s", news);
           //Send the message back to client
-          write(client_sock , news , BUFF_SIZE);
+          write(client_sock , news , MAX_NEWS_SIZE);
 	}
        else {
          printf("Meaningless request from Portal: %s\n", client_message);
        }
-       memset(client_message, '\0', BUFF_SIZE);
+       memset(client_message, '\0', MAX_NEWS_SIZE);
     }
      
     if(read_size == 0)
