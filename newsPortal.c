@@ -91,7 +91,7 @@ void* portal(void *arg) {
             exit(1);
         }
          
-        printf("Portal received a new news - %s",server_reply);
+        printf("\nPortal received a new news - %s\n",server_reply);
 
 	//Copy the news in the shared place
 	strcpy(shared_news->news_buf, server_reply);
@@ -100,7 +100,6 @@ void* portal(void *arg) {
 	for (i=0; i<NUM_READERS; i++) { 
           shared_news->read[i] = false;
 	}
-	sleep(rand() % 3);
 
         //Signal readers to consume the news
         pthread_cond_broadcast(&shared_news->cond_readers);
@@ -135,7 +134,7 @@ void* reader(void *arg) {
 	// New news is delivered, read it
 	strcpy(news, shared_news->news_buf);
         shared_news->read[thread_num] = true;
-        printf("Thread: %d Consumed news - %s\n", thread_num, news);
+        printf("Thread %d: Consumed news - %s\n", thread_num, news);
 
         // Now check if everybody else read the news
 	allread = true;
@@ -145,7 +144,9 @@ void* reader(void *arg) {
             break;
 	  }
         }
-
+        //Sleep some time to introduce randomness 
+	sleep(((float)rand()/(float)(RAND_MAX)) * 2);
+       
         //Everybody read it, now request for new news
         if (allread == true) {
           memset(shared_news->news_buf, '\0', MAX_NEWS_SIZE);

@@ -60,8 +60,8 @@ int main(int argc , char *argv[])
 	if (strncmp(client_message, "send", 4) == 0){
 	  //Generate new news
           memset(news, '\0', MAX_NEWS_SIZE);
-          sprintf(news, "NEWS: %d\n", random()%10000);
-          printf("Generated a new news - %s", news);
+          sprintf(news, "NEWS: %d", random()%10000);
+          printf("Generated a new news - %s\n", news);
           //Send the message back to client
           write(client_sock , news , MAX_NEWS_SIZE);
 	}
