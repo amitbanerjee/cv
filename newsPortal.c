@@ -9,7 +9,7 @@
 
 #define NUM_READERS 5
 #define MAX_NEWS_SIZE 1024
-#define PRODUCER_IP 127.0.0.1
+#define PRODUCER_IP "127.0.0.1"
 #define PORT 8080
 
 typedef struct {
@@ -40,12 +40,12 @@ void* portal(void *arg) {
     if (sock == -1)
     {
         printf("Could not create socket");
-        return;
+        exit(1);
     }
     printf("Socket created\n");
      
     //server.sin_addr.s_addr = inet_addr(PRODUCER_IP);
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_addr.s_addr = inet_addr(PRODUCER_IP);
     server.sin_family = AF_INET;
     server.sin_port = htons( PORT );
  
@@ -53,7 +53,7 @@ void* portal(void *arg) {
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
     {
         printf("connect failed. Error\n");
-        return;
+        exit(1);
     }
      
     printf("Connected\n");
@@ -80,15 +80,15 @@ void* portal(void *arg) {
 	sprintf(message, "send");
 	if( send(sock , message , strlen(message) , 0) < 0)
         {
-            printf("Send failed\n");
-            break;
+            printf("Send failed. Error\n");
+            exit(1);
         }
 
 	memset(server_reply, '\0', MAX_NEWS_SIZE);
         if( recv(sock , server_reply , MAX_NEWS_SIZE , 0) < 0)
         {
-            puts("recv failed");
-            break;
+            printf("recv failed. Error.\n");
+            exit(1);
         }
          
         printf("Portal received a new news - %s",server_reply);
@@ -137,44 +137,35 @@ void* consumer(void *arg) {
             break;
 	  }
         }
-        if (allread == true) { // All readers read news
+        if (allread == true) {
           memset(shared_news->news_buf, '\0', MAX_NEWS_SIZE);
           pthread_cond_signal(&shared_news->cond_portal);
         }
 
-        // signal the fact that new items may be produced
         pthread_mutex_unlock(&shared_news->mutex);
     }
 
-    // never reached
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
  
     int i;
-    //news_t shared_news;
     news_t shared_news =  {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, PTHREAD_COND_INITIALIZER};
     thread_info reader_threads[NUM_READERS];
     pthread_t threads[NUM_READERS+1];
 
-    printf("About to create threads\n");	
-    //shared_news.news_buf = "This is a constant string";
-    //shared_news->mutex = PTHREAD_MUTEX_INITIALIZER;
-    //shared_new->cond_portal = PTHREAD_COND_INITIALIZER;
-    //shared_news->cond_readers = PTHREAD_COND_INITIALIZER;
     for (i=0; i<NUM_READERS; i++) {
       shared_news.read[i] = true;
     }
-    printf("About to create threads1\n");	
+    printf("About to create portal thread\n");	
     pthread_create(&threads[0], NULL, portal, (void*)&shared_news);
-    printf("About to create threads2\n");	
+    printf("About to create reader threads\n");	
     for (i=0; i<NUM_READERS; i++) {
       reader_threads[i].thread_num = i;
       reader_threads[i].shared_news = &shared_news;
       pthread_create(&threads[i+1], NULL, consumer, (void*)&(reader_threads[i]));
     }
-    printf("About to create threads3\n");	
 
     for (i=0; i<=NUM_READERS; i++) {
       pthread_join(threads[i], NULL);
